@@ -26,14 +26,16 @@ import java.net.URL
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.location.LocationListener
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import kotlin.properties.Delegates
 
-private var latitude_of_loc by Delegates.notNull<Float>()
-private var longitude_of_loc by Delegates.notNull<Float>()
+
 
 class MainActivity : AppCompatActivity() {
     private val day = true
+    private var latitude_of_loc: Float = 0.0f
+    private var longitude_of_loc: Float = 0.0f
     private val REQUEST_LOCATION_PERMISSIONS = 1
 
     @SuppressLint("ServiceCast", "CutPasteId")
@@ -96,13 +98,15 @@ class MainActivity : AppCompatActivity() {
             LocationListener {
             override fun onLocationChanged(location: Location) {
                 // Use the user's location here
+
                 latitude_of_loc = location.latitude.toFloat()
                 longitude_of_loc = location.longitude.toFloat()
                 val latitude=findViewById<EditText>(id.latitudeValue)
                 val longitude=findViewById<EditText>(id.longitudeValue)
                 latitude.setText(latitude_of_loc.toString())
                 longitude.setText(longitude_of_loc.toString())
-                // Save these coordinates as the default location in your app
+                fetchWeatherData(latitude_of_loc, longitude_of_loc).start()
+                Log.d("MyTag", "myMethod() called");
             }
 
 
@@ -113,8 +117,8 @@ class MainActivity : AppCompatActivity() {
             override fun onProviderDisabled(provider: String) {}
         }, null)
 
-//        fetchWeatherData(latitude_of_loc, longitude_of_loc).start()
-        fetchWeatherData(20F, 20F).start()
+
+//        fetchWeatherData(20F, 20F).start()
     }
 
 
