@@ -4,19 +4,15 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.location.Criteria
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.example.coolweatherapp.R.*
 import com.example.coolweatherapp.R.style.*
 import com.google.gson.Gson
@@ -28,7 +24,6 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.location.LocationListener
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import kotlin.properties.Delegates
 
 
 
@@ -51,17 +46,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(layout.activity_main)
 
-//        update.setOnClickListener( View.OnClickListener {
-//            @Override
-//            public void onClick(View v) {}
-//        })
 
 
         val lat = findViewById<EditText>(id.latitudeValue)
         val long = findViewById<EditText>(id.longitudeValue)
         lat.setSelectAllOnFocus(true)
         long.setSelectAllOnFocus(true)
-        val updateButton: Button = findViewById(R.id.updatebutton)
+        val updateButton: Button = findViewById(id.updatebutton)
         updateButton.setSelectAllOnFocus(true)
         updateButton.setOnClickListener {
 
@@ -97,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, object :
             LocationListener {
             override fun onLocationChanged(location: Location) {
-                // Use the user's location here
+
 
                 latitude_of_loc = location.latitude.toFloat()
                 longitude_of_loc = location.longitude.toFloat()
@@ -106,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                 latitude.setText(latitude_of_loc.toString())
                 longitude.setText(longitude_of_loc.toString())
                 fetchWeatherData(latitude_of_loc, longitude_of_loc).start()
-                Log.d("MyTag", "myMethod() called");
+                Log.d("MyTag", "myMethod() called")
             }
 
 
@@ -129,7 +120,7 @@ class MainActivity : AppCompatActivity() {
                     append ("current_weather=true&")
                     append ("hourly=temperature_2m,weathercode,pressure_msl,windspeed_10m")
         }
-        val str = reqString.toString()
+        val str = reqString
         val url = URL(str)
         url.openStream().use {
             return Gson().fromJson(InputStreamReader(it, "UTF-8"), WeatherData :: class.java)
@@ -153,28 +144,25 @@ class MainActivity : AppCompatActivity() {
             val windspeed : TextView = findViewById(id.windspeedValue)
             val temp : TextView = findViewById(id.temperatureValue)
             val time : TextView = findViewById(id.timeValue)
-            // TODO ...
             pressure.text = request.hourly.pressure_msl.get(12).toString() + " hPa"
             winddir.text = request.current_weather.winddirection.toString()
             windspeed.text = request.current_weather.windspeed.toString() + " km/h"
             temp.text = request.current_weather.temperature.toString() + " °C"
-            time.text = request.current_weather.time // + " " + request.timezone
-            // TODO ...
+            time.text = request.current_weather.time
             val mapt = getWeatherCodeMap()
             val wCode = mapt.get(request.current_weather.weathercode)
             val wImage = when (wCode) {
                 WMOWeatherCode.CLEAR_SKY,
                 WMOWeatherCode.MAINLY_CLEAR,
-                WMOWeatherCode.PARTLY_CLOUDY -> if(day) wCode?.image +"_day"
-                else wCode?.image +"_night"
+                WMOWeatherCode.PARTLY_CLOUDY -> if(day) wCode.image +"_day"
+                else wCode.image +"_night"
                 else -> wCode?.image
             }
             val res = getResources()
-            weatherImage.setImageResource(R.drawable.fog)
+            weatherImage.setImageResource(drawable.fog)
             val resID = res.getIdentifier(wImage, "drawable", getPackageName())
             val drawable = this.getDrawable ( resID )
             weatherImage.setImageDrawable ( drawable )
-            // TODO ...
 
         }
     }
