@@ -1,12 +1,19 @@
 package com.example.coolweatherapp
 
-    data class WeatherData (
+import java.security.cert.CertPathValidatorException.BasicReason
+
+data class WeatherData (
         var latitude : String ,
         var longitude : String ,
         var timezone : String ,
         var current_weather : CurrentWeather ,
         var hourly : Hourly
     )
+
+    data class CoordinateError(
+        var error: Boolean,
+        var reason: String
+            )
     data class CurrentWeather (
         var temperature : Float ,
         var windspeed : Float ,

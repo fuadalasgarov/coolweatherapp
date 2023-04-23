@@ -3,15 +3,10 @@ package com.example.coolweatherapp
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.example.coolweatherapp.R.*
 import com.example.coolweatherapp.R.style.*
@@ -22,9 +17,9 @@ import java.net.URL
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.location.LocationListener
-import android.util.Log
+import android.widget.*
 import androidx.core.app.ActivityCompat
-
+import com.example.coolweatherapp.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity() {
@@ -32,19 +27,13 @@ class MainActivity : AppCompatActivity() {
     private var latitude_of_loc: Float = 0.0f
     private var longitude_of_loc: Float = 0.0f
     private val REQUEST_LOCATION_PERMISSIONS = 1
+    private lateinit var binding: ActivityMainBinding
 
     @SuppressLint("ServiceCast", "CutPasteId")
     override fun onCreate(savedInstanceState: Bundle?) {
-        when (resources.configuration.orientation) {
-            Configuration.ORIENTATION_PORTRAIT ->
-                if (day) setTheme(Theme_Night)
-                else setTheme(Theme_Night)
-            Configuration.ORIENTATION_LANDSCAPE ->
-                if (day) setTheme(Theme_Night_Land)
-                else setTheme(Theme_Night_Land)
-        }
         super.onCreate(savedInstanceState)
-        setContentView(layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
 
 
@@ -52,17 +41,13 @@ class MainActivity : AppCompatActivity() {
         val long = findViewById<EditText>(id.longitudeValue)
         lat.setSelectAllOnFocus(true)
         long.setSelectAllOnFocus(true)
-        val updateButton: Button = findViewById(id.updatebutton)
-        updateButton.setSelectAllOnFocus(true)
-        updateButton.setOnClickListener {
+        binding.updatebutton.setSelectAllOnFocus(true)
+        binding.updatebutton.setOnClickListener {
 
-            val latitude = findViewById<TextView>(id.latitudeValue).text.toString().toFloat()
-
-            val longitude = findViewById<TextView>(id.longitudeValue).text.toString().toFloat()
-            fetchWeatherData(latitude, longitude).start()
+            fetchWeatherData().start()
 
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(updateButton.windowToken, 0)
+            imm.hideSoftInputFromWindow(binding.updatebutton.windowToken, 0)
         }
 
         val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
@@ -92,12 +77,12 @@ class MainActivity : AppCompatActivity() {
 
                 latitude_of_loc = location.latitude.toFloat()
                 longitude_of_loc = location.longitude.toFloat()
-                val latitude=findViewById<EditText>(id.latitudeValue)
-                val longitude=findViewById<EditText>(id.longitudeValue)
-                latitude.setText(latitude_of_loc.toString())
-                longitude.setText(longitude_of_loc.toString())
-                fetchWeatherData(latitude_of_loc, longitude_of_loc).start()
-                Log.d("MyTag", "myMethod() called")
+
+
+                binding.latitudeValue.setText(latitude_of_loc.toString())
+                binding.longitudeValue.setText(longitude_of_loc.toString())
+
+                fetchWeatherData().start()
             }
 
 
@@ -109,43 +94,76 @@ class MainActivity : AppCompatActivity() {
         }, null)
 
 
-//        fetchWeatherData(20F, 20F).start()
     }
 
 
     private fun WeatherAPI_Call ( lat : Float , long : Float ) : WeatherData {
+
         val reqString = buildString {
             append ("https://api.open-meteo.com/v1/forecast?")
                     append ("latitude=${lat}&longitude=${long}&")
                     append ("current_weather=true&")
                     append ("hourly=temperature_2m,weathercode,pressure_msl,windspeed_10m")
         }
-        val str = reqString
-        val url = URL(str)
+        val url = URL(reqString)
+
+
         url.openStream().use {
             return Gson().fromJson(InputStreamReader(it, "UTF-8"), WeatherData :: class.java)
         }
-    }
-    private fun fetchWeatherData(lat: Float , long: Float ) : Thread {
-        return Thread {
-            val weather = WeatherAPI_Call(lat, long)
 
-            updateUI(weather)
+
+    }
+    private fun fetchWeatherData(): Thread {
+        return Thread {
+            val latString = binding.latitudeValue.text.toString().trim()
+            val longString = binding.longitudeValue.text.toString().trim()
+
+            if (latString.isEmpty() || longString.isEmpty()) {
+                runOnUiThread {
+                    Toast.makeText(this, "Please enter both latitude and longitude", Toast.LENGTH_SHORT).show()
+                }
+                return@Thread
+            }
+
+            val lat = latString.toFloatOrNull()
+            val long = longString.toFloatOrNull()
+
+            if (lat == null || long == null) {
+                runOnUiThread {
+                    Toast.makeText(this, "Invalid latitude or longitude", Toast.LENGTH_SHORT).show()
+                }
+                return@Thread
+            }
+
+            if ((lat > 90 || lat < -90) || (long > 90 || long < -90)) {
+                runOnUiThread {
+                    Toast.makeText(this, "Latitude and Longitude should be between -90 and 90", Toast.LENGTH_SHORT).show()
+                }
+                return@Thread
+            }
+
+
+            val weather = WeatherAPI_Call(lat, long)
+                runOnUiThread {
+                    updateUI(weather)
+                }
         }
     }
 
-//    @SuppressLint("UseCompatLoadingForDrawables", "DiscouragedApi", "SetTextI18n")
+
     @SuppressLint("SetTextI18n")
     private fun updateUI (request : WeatherData ){
         runOnUiThread {
             val weatherImage : ImageView = findViewById(id.weatherImage)
             val pressure : TextView = findViewById (id.pressureValue)
-            val winddir : TextView = findViewById(id.winddirectionValue)
+            val winddirimage : ImageView = findViewById(id.arrow)
             val windspeed : TextView = findViewById(id.windspeedValue)
             val temp : TextView = findViewById(id.temperatureValue)
             val time : TextView = findViewById(id.timeValue)
-            pressure.text = request.hourly.pressure_msl.get(12).toString() + " hPa"
-            winddir.text = request.current_weather.winddirection.toString()
+            pressure.text = request.hourly.pressure_msl[12].toString() + " hPa"
+            val winddir = request.current_weather.winddirection.toFloat()
+            winddirimage.rotation = 119f+winddir
             windspeed.text = request.current_weather.windspeed.toString() + " km/h"
             temp.text = request.current_weather.temperature.toString() + " °C"
             time.text = request.current_weather.time
