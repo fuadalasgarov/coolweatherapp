@@ -1,7 +1,5 @@
 package com.example.coolweatherapp
 
-import java.security.cert.CertPathValidatorException.BasicReason
-
 data class WeatherData (
         var latitude : String ,
         var longitude : String ,
@@ -10,10 +8,10 @@ data class WeatherData (
         var hourly : Hourly
     )
 
-    data class CoordinateError(
-        var error: Boolean,
-        var reason: String
-            )
+//    data class CoordinateError(
+//        var error: Boolean,
+//        var reason: String
+//            )
     data class CurrentWeather (
         var temperature : Float ,
         var windspeed : Float ,
@@ -58,7 +56,7 @@ data class WeatherData (
         THUNDERSTORM_HAIL_HEAVY (99 ,"tstorm")
     }
     fun getWeatherCodeMap () : Map <Int,WMOWeatherCode> {
-        var weatherMap = HashMap < Int , WMOWeatherCode>()
+        val weatherMap = HashMap < Int , WMOWeatherCode>()
         WMOWeatherCode.values().forEach {
             weatherMap[it.code] = it
         }

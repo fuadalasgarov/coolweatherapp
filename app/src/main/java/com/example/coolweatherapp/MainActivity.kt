@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.coolweatherapp
 
 import android.annotation.SuppressLint
@@ -17,9 +19,15 @@ import java.net.URL
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.location.LocationListener
+import android.util.Log
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import com.example.coolweatherapp.databinding.ActivityMainBinding
+import android.widget.Toast
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -86,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             }
 
 
+            @Deprecated("Deprecated in Java")
             override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
 
             override fun onProviderEnabled(provider: String) {}
@@ -105,15 +114,33 @@ class MainActivity : AppCompatActivity() {
                     append ("current_weather=true&")
                     append ("hourly=temperature_2m,weathercode,pressure_msl,windspeed_10m")
         }
+
+
         val url = URL(reqString)
-
-
         url.openStream().use {
-            return Gson().fromJson(InputStreamReader(it, "UTF-8"), WeatherData :: class.java)
+            val request = Gson().fromJson(InputStreamReader(it ,"UTF-8"), WeatherData :: class.java )
+            return request
         }
 
-
     }
+
+    private fun timeAPICall (lat: Float, long: Float) {
+
+        val urlTime = "https://api.timezonedb.com/v2.1/get-time-zone?key=IJGTZAE25F4L&format=json&by=position&lat=${lat}&lng=${long}"
+        val queue = Volley.newRequestQueue(this)
+        val request = JsonObjectRequest(
+            Request.Method.GET, urlTime, null,
+            { response ->
+                //val timeZone = response.getString("zoneName")
+                val dateTime = response.getString("formatted")
+                binding.timeValue.text = dateTime
+            },
+            { error ->
+                Log.e("ERROR", "Error occurred: ${error.message}")
+            })
+        queue.add(request)
+    }
+    @SuppressLint("SuspiciousIndentation")
     private fun fetchWeatherData(): Thread {
         return Thread {
             val latString = binding.latitudeValue.text.toString().trim()
@@ -136,14 +163,14 @@ class MainActivity : AppCompatActivity() {
                 return@Thread
             }
 
-            if ((lat > 90 || lat < -90) || (long > 90 || long < -90)) {
+            if ((lat > 180 || lat < -180) || (long > 180 || long < -180)) {
                 runOnUiThread {
                     Toast.makeText(this, "Latitude and Longitude should be between -90 and 90", Toast.LENGTH_SHORT).show()
                 }
                 return@Thread
             }
 
-
+            timeAPICall(lat, long)
             val weather = WeatherAPI_Call(lat, long)
                 runOnUiThread {
                     updateUI(weather)
@@ -151,8 +178,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    private fun getTimeForCoordinates(lat: Double, lon: Double) {
+//        val apiKey = "your_api_key_here"
+//        val url = "http://api.timezonedb.com/v2.1/get-time-zone?key=$apiKey&format=json&by=position&lat=$lat&lng=$lon"
+//
+//        val queue = Volley.newRequestQueue(this)
+//        val request = JsonObjectRequest(
+//            Request.Method.GET, url, null,
+//            { response ->
+//                val timeZone = response.getString("zoneName")
+//                val dateTime = response.getString("formatted")
+//                binding.timeValue.text = dateTime + " " + timeZone
+//            },
+//            { error ->
+//                Log.e("ERROR", "Error occurred: ${error.message}")
+//            }
+//        )
+//
+//        queue.add(request)
+//    }
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "UseCompatLoadingForDrawables", "DiscouragedApi")
     private fun updateUI (request : WeatherData ){
         runOnUiThread {
             val weatherImage : ImageView = findViewById(id.weatherImage)
@@ -160,13 +207,12 @@ class MainActivity : AppCompatActivity() {
             val winddirimage : ImageView = findViewById(id.arrow)
             val windspeed : TextView = findViewById(id.windspeedValue)
             val temp : TextView = findViewById(id.temperatureValue)
-            val time : TextView = findViewById(id.timeValue)
             pressure.text = request.hourly.pressure_msl[12].toString() + " hPa"
             val winddir = request.current_weather.winddirection.toFloat()
             winddirimage.rotation = 119f+winddir
             windspeed.text = request.current_weather.windspeed.toString() + " km/h"
             temp.text = request.current_weather.temperature.toString() + " °C"
-            time.text = request.current_weather.time
+//            binding.timeValue.text = request.current_weather.time
             val mapt = getWeatherCodeMap()
             val wCode = mapt.get(request.current_weather.weathercode)
             val wImage = when (wCode) {
